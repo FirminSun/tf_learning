@@ -65,8 +65,6 @@ with tf.Session() as sess:
         print("Iter " + str(epoch) + ",Testing Accuracy " + str(test_acc) +",Training Accuracy " + str(train_acc))
 
 
-# In[ ]:
-
-Iter 29,Testing Accuracy 0.9727,Training Accuracy 0.995655
-Iter 30,Testing Accuracy 0.9722,Training Accuracy 0.995782
-
+"""
+增加神经元， 只是为了体现dropout
+"""
