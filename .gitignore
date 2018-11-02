@@ -108,3 +108,4 @@ inria/
 temp/
 MNIST_data/
 *.bmp
+/db/*.db
