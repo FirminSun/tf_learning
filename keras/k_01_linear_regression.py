@@ -87,7 +87,7 @@ if __name__ == '__main__':
     print('Test MSE:', scores)
 
     saver = tfe.Saver(model.variables)
-    saver.save('weights/01_linear_regression/weights.ckpt')
+    saver.save('weights/k_01_linear_regression/weights.ckpt')
 
     # I don't know how to restore it by now.
     # I try many methods, but failed.
