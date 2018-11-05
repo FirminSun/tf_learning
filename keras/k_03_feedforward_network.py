@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 # -----------------------------------------------------
-# @Time    : 11/2/2018 2:45 PM
+# @Time    : 11/2/2018 4:11 PM
 # @Author  : Firmin.Sun (fmsunyh@gmail.com)
 # @Software: ZJ_AI
 # -----------------------------------------------------
@@ -48,8 +48,9 @@ if not os.path.exists('weights/'):
     os.makedirs('weights/')
 
 # 2. parameters
+hidden_dim = 500
 batch_size = 128
-epochs = 2
+epochs = 10
 num_classes = 10
 
 # 3. train data
@@ -74,25 +75,31 @@ print('y train', y_train_ohe.shape)
 print('x test', x_test.shape)
 print('y test', y_test_ohe.shape)
 
-# 4. build model (logistic regression)
-def build_model(inputs, num_classes):
-    input_layer = tf.keras.Input(inputs)
-    x = tf.keras.layers.Dense(num_classes, activation='softmax',name='predictions')(input_layer)
-    model = tf.keras.Model(inputs=input_layer, outputs=x)
+# 4. build model (MLP)
+class MLP(tf.keras.Model):
 
-    return model
+    def __init__(self, hidden_units, num_classes):
+        super(MLP, self).__init__()
+
+        self.hidden = tf.keras.layers.Dense(hidden_units, activation='relu')
+        self.classifier = tf.keras.layers.Dense(num_classes, activation='softmax')
+
+    def call(self, inputs, training=None, mask=None):
+        # x = tf.keras.Input(inputs)
+        x = self.hidden(inputs)
+        output = self.classifier(x)
+
+        return output
 
 if __name__ == '__main__':
-    inputs = (x_train.shape[1:])
-    model = build_model(inputs, num_classes)
-    model.compile(optimizer=tf.train.GradientDescentOptimizer(0.1), loss='categorical_crossentropy',metrics=['accuracy'])
+    model = MLP(hidden_dim, num_classes)
+    model.compile(optimizer=tf.train.GradientDescentOptimizer(0.1), loss='categorical_crossentropy', metrics=['accuracy'])
 
-    model.summary()
+    model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs, validation_data=(x_test, y_test_ohe), verbose=2)
 
-    history = model.fit(x_train, y_train_ohe, batch_size=batch_size,epochs=epochs, validation_data=(x_test, y_test_ohe), verbose=2)
-
+    # evaluate on test set
     scores = model.evaluate(x_test, y_test_ohe, batch_size, verbose=2)
-    print('Final test loss and accuracy:', scores)
+    print("Final test loss and accuracy :", scores)
 
     saver = tfe.Saver(model.variables)
-    saver.save('weights/k_02_logistic_regression/wegihts.ckpt')
+    saver.save('weights/k_03_feedforward/weights.ckpt')

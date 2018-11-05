@@ -65,7 +65,7 @@ print('y train', y_train.shape, y_train.mean(), y_train.std())
 print('x test', x_test.shape, x_test.mean(), x_test.std())
 print('y test', y_test.shape, y_test.mean(), y_test.std())
 
-# 4. model
+# 4. model (linear regression)
 def build_model(input_shape=None):
     inputs = tf.keras.Input(input_shape)
     x = tf.keras.layers.Dense(1)(inputs)
