@@ -50,24 +50,22 @@ if not os.path.exists('weights/'):
     os.makedirs('weights/')
 
 image_size = 32
-batch_size = 128
-epochs = 8
+height = image_size*3
+width = image_size*3
+
+batch_size = 2
+epochs = 50
 num_classes = 10
 
 (x_train, y_train),(x_test, y_test) = cifar10.load_data()
+x_train = x_train.astype('float32') / 255.
+x_test = x_test.astype('float32') / 255.
+
 x_train = x_train.reshape((-1, image_size, image_size, 3))
 x_test = x_test.reshape((-1, image_size, image_size, 3))
 
-def normalize(x_train, x_test):
-    # this function normalize inputs for zero mean and unit variance
-    # it is used when training a model.
-    # Input: training set and test set
-    # Output: normalized training set and test set according to the trianing set statistics.
-    mean = np.mean(x_train, axis=(0, 1, 2, 3))
-    std = np.std(x_train, axis=(0, 1, 2, 3))
-    x_train = (x_train - mean) / (std + 1e-7)
-    x_test = (x_test - mean) / (std + 1e-7)
-    return x_train, x_test
+x_train = tf.image.resize_images(images=x_train, size=[height, width])
+x_test = tf.image.resize_images(images=x_test, size=[height, width])
 
 y_train_ohe = tf.one_hot(y_train, depth=num_classes).numpy()
 y_test_ohe = tf.one_hot(y_test, depth=num_classes).numpy()
@@ -79,7 +77,7 @@ print('y test', y_test_ohe.shape)
 
 def conv3x3(channels, kernel_size=(3, 3) , strides=(1, 1), name=''):
     conv = tf.keras.layers.Conv2D(filters=channels, kernel_size=kernel_size, strides=strides,
-                               padding='same', use_bias=False,name=name,
+                               padding='same', use_bias=True,name=name,
                                kernel_initializer=tf.variance_scaling_initializer())
 
     return conv
@@ -124,30 +122,39 @@ class VGG16(tf.keras.Model):
 
     def call(self, inputs, training=None, mask=None):
         x = self.block1_conv1(inputs)
+        x = tf.keras.activations.relu(x)
         x = self.block1_conv2(x)
         x = tf.keras.activations.relu(x)
         x = self.block1_pool(x)
 
         x = self.block2_conv1(x)
+        x = tf.keras.activations.relu(x)
         x = self.block2_conv2(x)
+        x = tf.keras.activations.relu(x)
         x = self.block2_conv3(x)
         x = tf.keras.activations.relu(x)
         x = self.block2_pool(x)
 
         x = self.block3_conv1(x)
+        x = tf.keras.activations.relu(x)
         x = self.block3_conv2(x)
+        x = tf.keras.activations.relu(x)
         x = self.block3_conv3(x)
         x = tf.keras.activations.relu(x)
         x = self.block3_pool(x)
 
         x = self.block4_conv1(x)
+        x = tf.keras.activations.relu(x)
         x = self.block4_conv2(x)
+        x = tf.keras.activations.relu(x)
         x = self.block4_conv3(x)
         x = tf.keras.activations.relu(x)
         x = self.block4_pool(x)
 
         x = self.block5_conv1(x)
+        x = tf.keras.activations.relu(x)
         x = self.block5_conv2(x)
+        x = tf.keras.activations.relu(x)
         x = self.block5_conv3(x)
         x = tf.keras.activations.relu(x)
         x = self.block5_pool(x)
@@ -167,17 +174,15 @@ class VGG16(tf.keras.Model):
 
 if __name__ == '__main__':
     model = VGG16(num_classes)
+    model.compile(optimizer=tf.train.AdamOptimizer(0.001), loss='categorical_crossentropy', metrics=['accuracy'])
 
-    model.compile(optimizer=tf.train.AdamOptimizer(learning_rate=0.001), loss='categorical_crossentropy', metrics=['accuracy'])
-    model.metrics_names = ['loss']
-
-    dummy_x = tf.zeros((1, image_size, image_size, 3))
+    dummy_x = tf.zeros((1, height, width, 3))
     model._set_inputs(dummy_x)
     model.summary()
 
-    model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs,validation_data=(x_test, y_test_ohe),verbose=2)
+    model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs,validation_data=(x_test, y_test_ohe),verbose=1)
 
-    scores = model.evaluate(x_test, y_test_ohe, batch_size=batch_size, verbose=1)
+    scores = model.evaluate(x_test, y_test_ohe, batch_size=batch_size, verbose=2)
     print('Final test loss and accuracy :', scores)
 
     saver = tfe.Saver(model.variables)
